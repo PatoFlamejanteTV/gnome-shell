@@ -1080,13 +1080,13 @@ var BaseAppView = GObject.registerClass({
 
     _redisplay() {
         const oldApps = this._orderedItems.slice();
-        const oldAppIds = oldApps.map(icon => icon.id);
+        const oldAppIds = new Set(oldApps.map(icon => icon.id));
 
         const newApps = this._loadApps().sort(this._compareItems.bind(this));
-        const newAppIds = newApps.map(icon => icon.id);
+        const newAppIds = new Set(newApps.map(icon => icon.id));
 
-        const addedApps = newApps.filter(icon => !oldAppIds.includes(icon.id));
-        const removedApps = oldApps.filter(icon => !newAppIds.includes(icon.id));
+        const addedApps = newApps.filter(icon => !oldAppIds.has(icon.id));
+        const removedApps = oldApps.filter(icon => !newAppIds.has(icon.id));
 
         // Remove old app icons
         removedApps.forEach(icon => {
@@ -1094,10 +1094,12 @@ var BaseAppView = GObject.registerClass({
             icon.destroy();
         });
 
+        const addedAppsSet = new Set(addedApps);
+
         // Add new app icons, or move existing ones
         newApps.forEach(icon => {
             const [page, position] = this._getItemPosition(icon);
-            if (addedApps.includes(icon)) {
+            if (addedAppsSet.has(icon)) {
                 // If there's two pages, newly installed apps should not appear
                 // on page 0
                 if (page === -1 && position === -1 && this._grid.nPages > 1)
